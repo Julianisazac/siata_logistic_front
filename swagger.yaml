@@ -1,0 +1,2223 @@
+openapi: 3.0.3
+info:
+  title: 🚚 SIATA Logistics API
+  description: |
+    📦 **Sistema Integral de Administración y Transporte de Almacenes**
+    
+    Bienvenido a la documentación oficial de la API de SIATA Logistics. 
+    Este sistema proporciona una solución completa para la gestión logística,
+    permitiendo el control total de clientes, productos, bodegas, puertos y envíos.
+    
+    ## 🌟 Características Principales
+    - 👥 Gestión completa de clientes
+    - 📦 Control de inventario de productos
+    - 🏭 Administración de bodegas y almacenes
+    - ⚓ Gestión de puertos marítimos
+    - 🚛🚢 Sistema de envíos terrestres y marítimos
+    - 📊 Seguimiento en tiempo real de envíos
+    - 💰 Cálculo automático de costos y descuentos
+    
+    ## 🔐 Autenticación
+    Actualmente la API no requiere autenticación, pero se recomienda implementar
+    tokens JWT para producción.
+    
+    ## 🌍 Base URL
+    ```
+    http://localhost:3000
+    ```
+    
+    ## 📝 Formato de Respuestas
+    Todas las respuestas siguen el formato JSON estándar.
+    
+  version: 1.0.0
+  contact:
+    name: SIATA Logistics Team
+    email: support@siata-logistics.com
+    url: https://siata-logistics.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: 🚀 Servidor de Desarrollo
+  - url: https://api.siata-logistics.com
+    description: 🌐 Servidor de Producción
+
+tags:
+  - name: 👥 Clientes
+    description: Gestión completa de clientes del sistema logístico
+  - name: 📦 Productos
+    description: Administración de productos y catálogo
+  - name: 🏭 Bodegas
+    description: Gestión de almacenes y bodegas
+  - name: ⚓ Puertos
+    description: Control de puertos marítimos
+  - name: 🚚 Envíos
+    description: Sistema de envíos terrestres y marítimos
+
+paths:
+  /clients:
+    get:
+      tags:
+        - 👥 Clientes
+      summary: 📋 Obtener todos los clientes
+      description: |
+        🔍 **Recupera la lista completa de clientes registrados en el sistema.**
+        
+        Este endpoint devuelve todos los clientes con su información básica incluyendo
+        nombre, email y teléfono. Es ideal para listar clientes en el panel de administración
+        o para sincronización con otros sistemas.
+        
+        ## 📊 Respuesta Típica
+        ```json
+        [
+          {
+            "id": 1,
+            "name": "Juan Pérez",
+            "email": "juan@ejemplo.com",
+            "phone": "+57 300 123 4567"
+          }
+        ]
+        ```
+      operationId: getAllClients
+      responses:
+        '200':
+          description: ✅ Lista de clientes obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+              examples:
+                lista_clientes:
+                  summary: 📋 Ejemplo de lista de clientes
+                  value:
+                    - id: 1
+                      name: "María González"
+                      email: "maria@empresa.com"
+                      phone: "+57 310 987 6543"
+                    - id: 2
+                      name: "Carlos Rodríguez"
+                      email: "carlos@negocio.com"
+                      phone: "+57 320 456 7890"
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - 👥 Clientes
+      summary: ➕ Crear nuevo cliente
+      description: |
+        🆕 **Registra un nuevo cliente en el sistema logístico.**
+        
+        Este endpoint permite crear un nuevo cliente con toda su información básica.
+        El cliente podrá ser utilizado posteriormente en la creación de envíos.
+        
+        ## 📝 Campos Requeridos
+        - **name**: Nombre completo del cliente (mínimo 3 caracteres)
+        - **email**: Correo electrónico válido (único en el sistema)
+        - **phone**: Número telefónico (opcional pero recomendado)
+        
+        ## ⚠️ Consideraciones
+        - El email debe ser único en el sistema
+        - El nombre no puede estar vacío
+        - El teléfono debe incluir código de país si es internacional
+        
+        ## 🎯 Casos de Uso
+        - Registro de nuevos clientes corporativos
+        - Incorporación de clientes individuales
+        - Migración masiva de clientes
+      operationId: createClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClientRequest'
+            examples:
+              cliente_nuevo:
+                summary: 🆕 Ejemplo de nuevo cliente
+                value:
+                  name: "Ana Martínez"
+                  email: "ana@nuevaempresa.com"
+                  phone: "+57 315 234 5678"
+              cliente_corporativo:
+                summary: 🏢 Ejemplo de cliente corporativo
+                value:
+                  name: "Transportes Rápidos S.A."
+                  email: "contacto@transportesrapidos.com"
+                  phone: "+57 1 234 5678"
+      responses:
+        '201':
+          description: ✅ Cliente creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+              examples:
+                cliente_creado:
+                  summary: 🎉 Cliente creado con éxito
+                  value:
+                    id: 123
+                    name: "Ana Martínez"
+                    email: "ana@nuevaempresa.com"
+                    phone: "+57 315 234 5678"
+        '400':
+          description: ❌ Datos inválidos o email duplicado
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+  /clients/{id}:
+    get:
+      tags:
+        - 👥 Clientes
+      summary: 🔍 Obtener cliente por ID
+      description: |
+        🔎 **Busca un cliente específico utilizando su identificador único.**
+        
+        Este endpoint permite obtener los detalles completos de un cliente
+        utilizando su ID. Es útil para mostrar información detallada o
+        para editar datos existentes.
+        
+        ## 🎯 Casos de Uso
+        - Visualización de perfil de cliente
+        - Pre-carga de datos para edición
+        - Verificación de existencia de cliente
+        
+        ## ⚠️ Notas
+        - El ID debe ser un número entero válido
+        - Si el cliente no existe, retorna error 404
+      operationId: getClientById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 🆔 Identificador único del cliente
+          schema:
+            type: integer
+            minimum: 1
+          example: 123
+      responses:
+        '200':
+          description: ✅ Cliente encontrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+              examples:
+                cliente_encontrado:
+                  summary: 🔍 Cliente encontrado
+                  value:
+                    id: 123
+                    name: "Ana Martínez"
+                    email: "ana@nuevaempresa.com"
+                    phone: "+57 315 234 5678"
+        '404':
+          description: ❌ Cliente no encontrado
+          $ref: '#/components/responses/NotFound'
+        '400':
+          description: ❌ ID inválido
+          $ref: '#/components/responses/BadRequest'
+
+    put:
+      tags:
+        - 👥 Clientes
+      summary: ✏️ Actualizar cliente existente
+      description: |
+        🔄 **Actualiza la información de un cliente existente.**
+        
+        Este endpoint permite modificar los datos de un cliente registrado.
+        Todos los campos pueden ser actualizados, excepto el ID que es inmutable.
+        
+        ## 📝 Campos Actualizables
+        - **name**: Nuevo nombre del cliente
+        - **email**: Nuevo correo electrónico (debe ser único)
+        - **phone**: Nuevo número telefónico
+        
+        ## ⚠️ Consideraciones Importantes
+        - El email no puede coincidir con otro cliente existente
+        - Se recomienda validar el formato del email antes de enviar
+        - El teléfono debe incluir código de país para números internacionales
+        
+        ## 🎯 Casos de Uso
+        - Actualización de datos de contacto
+        - Cambio de razón social
+        - Corrección de información errónea
+      operationId: updateClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 🆔 Identificador único del cliente a actualizar
+          schema:
+            type: integer
+            minimum: 1
+          example: 123
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClientRequest'
+            examples:
+              actualizacion_parcial:
+                summary: 🔄 Actualización de email
+                value:
+                  email: "nuevoemail@actualizado.com"
+              actualizacion_completa:
+                summary: 🔄 Actualización completa
+                value:
+                  name: "Ana Martínez Ltda."
+                  email: "contacto@anamartinez.com"
+                  phone: "+57 315 999 8888"
+      responses:
+        '200':
+          description: ✅ Cliente actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+              examples:
+                cliente_actualizado:
+                  summary: 🎉 Cliente actualizado con éxito
+                  value:
+                    id: 123
+                    name: "Ana Martínez Ltda."
+                    email: "contacto@anamartinez.com"
+                    phone: "+57 315 999 8888"
+        '400':
+          description: ❌ Datos inválidos o email duplicado
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: ❌ Cliente no encontrado
+          $ref: '#/components/responses/NotFound'
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - 👥 Clientes
+      summary: 🗑️ Eliminar cliente
+      description: |
+        🚫 **Elimina permanentemente un cliente del sistema.**
+        
+        ⚠️ **ADVERTENCIA:** Esta acción es irreversible y eliminará:
+        - Todos los datos del cliente
+        - El historial de envíos asociados
+        - Referencias en otros módulos
+        
+        ## 🔒 Consideraciones de Seguridad
+        - Verificar que no haya envíos activos
+        - Considerar archivar en lugar de eliminar
+        - Realizar backup antes de eliminación
+        
+        ## 🎯 Casos de Uso
+        - Eliminación por solicitud del cliente (RGPD)
+        - Limpieza de datos duplicados
+        - Remoción de cuentas de prueba
+        
+        ## ⚠️ Recomendaciones
+        - Implementar confirmación doble en UI
+        - Registrar auditoría de eliminación
+        - Notificar a stakeholders relevantes
+      operationId: deleteClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 🆔 Identificador único del cliente a eliminar
+          schema:
+            type: integer
+            minimum: 1
+          example: 123
+      responses:
+        '200':
+          description: ✅ Cliente eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Cliente eliminado exitosamente"
+              examples:
+                eliminacion_exitosa:
+                  summary: 🗑️ Cliente eliminado
+                  value:
+                    message: "Cliente eliminado exitosamente"
+        '404':
+          description: ❌ Cliente no encontrado
+          $ref: '#/components/responses/NotFound'
+        '400':
+          description: ❌ Cliente con envíos activos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                error_envios_activos:
+                  summary: ⚠️ No se puede eliminar
+                  value:
+                    message: "No se puede eliminar el cliente. Tiene envíos activos asociados."
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+/products:
+    get:
+      tags:
+        - 📦 Productos
+      summary: 📋 Obtener todos los productos
+      description: |
+        🔍 **Recupera el catálogo completo de productos disponibles en el sistema.**
+        
+        Este endpoint devuelve todos los productos registrados con su información básica.
+        Es ideal para mostrar el catálogo de productos, generar informes de inventario
+        o sincronizar con sistemas externos.
+        
+        ## 📊 Respuesta Típica
+        ```json
+        [
+          {
+            "id": 1,
+            "name": "Laptop Dell XPS 15",
+            "description": "Laptop de alto rendimiento con procesador Intel i7"
+          }
+        ]
+        ```
+        
+        ## 🎯 Casos de Uso
+        - Carga de catálogo en frontend
+        - Generación de reportes de inventario
+        - Sincronización con ERP
+        - Búsqueda de productos para envíos
+      operationId: getAllProducts
+      responses:
+        '200':
+          description: ✅ Lista de productos obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+              examples:
+                lista_productos:
+                  summary: 📦 Ejemplo de catálogo de productos
+                  value:
+                    - id: 1
+                      name: "Laptop Dell XPS 15"
+                      description: "Laptop de alto rendimiento con procesador Intel i7, 16GB RAM, 512GB SSD"
+                    - id: 2
+                      name: "Monitor LG 27UL850"
+                      description: "Monitor 4K de 27 pulgadas, USB-C, 60Hz"
+                    - id: 3
+                      name: "Teclado Mecánico RGB"
+                      description: "Teclado gaming mecánico con retroiluminación RGB personalizable"
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - 📦 Productos
+      summary: ➕ Crear nuevo producto
+      description: |
+        🆕 **Registra un nuevo producto en el catálogo del sistema.**
+        
+        Este endpoint permite agregar nuevos productos al inventario. Cada producto
+        podrá ser utilizado posteriormente en la creación de envíos.
+        
+        ## 📝 Campos Requeridos
+        - **name**: Nombre del producto (único en el sistema)
+        - **description**: Descripción detallada del producto
+        
+        ## 🎯 Características Adicionales
+        - El nombre debe ser único para evitar duplicados
+        - La descripción puede incluir especificaciones técnicas
+        - Los productos pueden ser físicos o digitales
+        
+        ## ⚠️ Consideraciones
+        - Validar que el nombre no exista previamente
+        - Incluir información relevante para logística
+        - Considerar peso y dimensiones para envíos
+        
+        ## 📋 Ejemplos de Uso
+        - Registro de nueva mercancía
+        - Adición de productos a catálogo
+        - Actualización de inventario
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+            examples:
+              producto_tecnologico:
+                summary: 💻 Producto tecnológico
+                value:
+                  name: "Smartphone Samsung Galaxy S24"
+                  description: "Teléfono flagship con cámara de 50MP, 256GB almacenamiento, 5G"
+              producto_general:
+                summary: 📦 Producto general
+                value:
+                  name: "Caja de Herramientas Profesional"
+                  description: "Set de 100 piezas con herramientas de alta calidad para profesionales"
+      responses:
+        '201':
+          description: ✅ Producto creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+              examples:
+                producto_creado:
+                  summary: 🎉 Producto creado con éxito
+                  value:
+                    id: 456
+                    name: "Smartphone Samsung Galaxy S24"
+                    description: "Teléfono flagship con cámara de 50MP, 256GB almacenamiento, 5G"
+        '400':
+          description: ❌ Datos inválidos o nombre duplicado
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+  /products/{id}:
+    get:
+      tags:
+        - 📦 Productos
+      summary: 🔍 Obtener producto por ID
+      description: |
+        🔎 **Busca un producto específico utilizando su identificador único.**
+        
+        Este endpoint permite obtener los detalles completos de un producto
+        utilizando su ID. Es útil para mostrar información detallada del producto
+        o para verificar existencia antes de crear envíos.
+        
+        ## 🎯 Casos de Uso
+        - Visualización de ficha de producto
+        - Verificación de disponibilidad
+        - Pre-carga de datos para edición
+        - Consulta para generación de facturas
+        
+        ## ⚠️ Notas
+        - El ID debe ser un número entero válido
+        - Si el producto no existe, retorna error 404
+      operationId: getProductById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 🆔 Identificador único del producto
+          schema:
+            type: integer
+            minimum: 1
+          example: 456
+      responses:
+        '200':
+          description: ✅ Producto encontrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+              examples:
+                producto_encontrado:
+                  summary: 🔍 Producto encontrado
+                  value:
+                    id: 456
+                    name: "Smartphone Samsung Galaxy S24"
+                    description: "Teléfono flagship con cámara de 50MP, 256GB almacenamiento, 5G"
+        '404':
+          description: ❌ Producto no encontrado
+          $ref: '#/components/responses/NotFound'
+        '400':
+          description: ❌ ID inválido
+          $ref: '#/components/responses/BadRequest'
+
+    put:
+      tags:
+        - 📦 Productos
+      summary: ✏️ Actualizar producto existente
+      description: |
+        🔄 **Actualiza la información de un producto existente en el catálogo.**
+        
+        Este endpoint permite modificar los datos de un producto registrado.
+        Es útil para mantener actualizado el catálogo con nueva información,
+        correcciones o cambios en especificaciones.
+        
+        ## 📝 Campos Actualizables
+        - **name**: Nuevo nombre del producto (debe ser único)
+        - **description**: Nueva descripción del producto
+        
+        ## ⚠️ Consideraciones Importantes
+        - El nombre no puede coincidir con otro producto existente
+        - Se recomienda mantener historial de cambios
+        - La descripción debe ser clara y concisa
+        
+        ## 🎯 Casos de Uso
+        - Actualización de especificaciones técnicas
+        - Cambio de nombre comercial
+        - Mejora de descripciones para marketing
+        - Corrección de información errónea
+      operationId: updateProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 🆔 Identificador único del producto a actualizar
+          schema:
+            type: integer
+            minimum: 1
+          example: 456
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+            examples:
+              actualizacion_descripcion:
+                summary: 📝 Actualización de descripción
+                value:
+                  description: "Teléfono flagship con cámara de 50MP, 256GB almacenamiento, 5G, pantalla AMOLED 120Hz"
+              actualizacion_completa:
+                summary: 🔄 Actualización completa
+                value:
+                  name: "Samsung Galaxy S24 Ultra"
+                  description: "Teléfono premium con cámara de 200MP, S-Pen incluida, 512GB almacenamiento, 5G"
+      responses:
+        '200':
+          description: ✅ Producto actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+              examples:
+                producto_actualizado:
+                  summary: 🎉 Producto actualizado con éxito
+                  value:
+                    id: 456
+                    name: "Samsung Galaxy S24 Ultra"
+                    description: "Teléfono premium con cámara de 200MP, S-Pen incluida, 512GB almacenamiento, 5G"
+        '400':
+          description: ❌ Datos inválidos o nombre duplicado
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: ❌ Producto no encontrado
+          $ref: '#/components/responses/NotFound'
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - 📦 Productos
+      summary: 🗑️ Eliminar producto
+      description: |
+        🚫 **Elimina permanentemente un producto del catálogo.**
+        
+        ⚠️ **ADVERTENCIA:** Esta acción es irreversible y eliminará:
+        - El producto del catálogo
+        - Referencias en envíos existentes
+        - Histórico de movimientos asociados
+        
+        ## 🔒 Consideraciones de Seguridad
+        - Verificar que no haya envíos activos con este producto
+        - Considerar marcar como discontinuado en lugar de eliminar
+        - Realizar backup antes de eliminación
+        
+        ## 🎯 Casos de Uso
+        - Eliminación de productos obsoletos
+        - Limpieza de catálogo
+        - Remoción de productos de prueba
+        
+        ## ⚠️ Recomendaciones
+        - Implementar confirmación doble en UI
+        - Registrar auditoría de eliminación
+        - Notificar a equipos relevantes
+      operationId: deleteProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 🆔 Identificador único del producto a eliminar
+          schema:
+            type: integer
+            minimum: 1
+          example: 456
+      responses:
+        '200':
+          description: ✅ Producto eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Producto eliminado exitosamente"
+              examples:
+                eliminacion_exitosa:
+                  summary: 🗑️ Producto eliminado
+                  value:
+                    message: "Producto eliminado exitosamente"
+        '404':
+          description: ❌ Producto no encontrado
+          $ref: '#/components/responses/NotFound'
+        '400':
+          description: ❌ Producto con envíos activos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                error_envios_activos:
+                  summary: ⚠️ No se puede eliminar
+                  value:
+                    message: "No se puede eliminar el producto. Tiene envíos activos asociados."
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+/warehouses:
+    get:
+      tags:
+        - 🏭 Bodegas
+      summary: 📋 Obtener todas las bodegas
+      description: |
+        🔍 **Recupera la lista completa de bodegas y almacenes disponibles.**
+        
+        Este endpoint devuelve todas las bodegas registradas con su información básica
+        incluyendo nombre, ubicación y país. Es fundamental para la gestión logística
+        y planificación de rutas de envío.
+        
+        ## 📊 Respuesta Típica
+        ```json
+        [
+          {
+            "id": 1,
+            "name": "Bodega Central Bogotá",
+            "location": "Calle 100 # 50-90",
+            "country": "Colombia"
+          }
+        ]
+        ```
+        
+        ## 🎯 Casos de Uso
+        - Selección de bodega para envíos terrestres
+        - Gestión de inventario por ubicación
+        - Planificación de rutas logísticas
+        - Reportes de capacidad de almacenamiento
+      operationId: getAllWarehouses
+      responses:
+        '200':
+          description: ✅ Lista de bodegas obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Warehouse'
+              examples:
+                lista_bodegas:
+                  summary: 🏭 Ejemplo de lista de bodegas
+                  value:
+                    - id: 1
+                      name: "Bodega Central Bogotá"
+                      location: "Calle 100 # 50-90, Bogotá"
+                      country: "Colombia"
+                    - id: 2
+                      name: "Centro de Distribución Medellín"
+                      location: "Cra 65 # 30-75, Medellín"
+                      country: "Colombia"
+                    - id: 3
+                      name: "Almacén Costeño Barranquilla"
+                      location: "Vía 40 # 45-20, Barranquilla"
+                      country: "Colombia"
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - 🏭 Bodegas
+      summary: ➕ Crear nueva bodega
+      description: |
+        🆕 **Registra una nueva bodega en el sistema logístico.**
+        
+        Este endpoint permite agregar nuevas instalaciones de almacenamiento a la red.
+        Cada bodega podrá ser utilizada como origen o destino en envíos terrestres.
+        
+        ## 📝 Campos Requeridos
+        - **name**: Nombre de la bodega (único en el sistema)
+        - **location**: Dirección física completa
+        - **country**: País donde se ubica la bodega
+        
+        ## 🎯 Características Adicionales
+        - Las bodegas son puntos clave en la cadena de suministro
+        - Se pueden asignar capacidades y especializaciones
+        - Integración con sistemas de gestión de inventario
+        
+        ## ⚠️ Consideraciones
+        - Verificar que la ubicación sea accesible para transporte
+        - Validar coordenadas GPS para sistemas de ruteo
+        - Considerar zonas horarias para planificación
+        
+        ## 📋 Ejemplos de Uso
+        - Expansión de red logística
+        - Apertura de nuevos centros de distribución
+        - Incorporación de almacenes de terceros
+      operationId: createWarehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWarehouseRequest'
+            examples:
+              bodega_urbana:
+                summary: 🏙️ Bodega urbana
+                value:
+                  name: "Micro Centro Bogotá Norte"
+                  location: "Calle 170 # 58-75, Bogotá"
+                  country: "Colombia"
+              bodega_industrial:
+                summary: 🏭 Bodega industrial
+                value:
+                  name: "Parque Logístico Industrial"
+                  location: "Km 3 Vía a Siberia, Cota"
+                  country: "Colombia"
+      responses:
+        '201':
+          description: ✅ Bodega creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warehouse'
+              examples:
+                bodega_creada:
+                  summary: 🎉 Bodega creada con éxito
+                  value:
+                    id: 789
+                    name: "Micro Centro Bogotá Norte"
+                    location: "Calle 170 # 58-75, Bogotá"
+                    country: "Colombia"
+        '400':
+          description: ❌ Datos inválidos o nombre duplicado
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+  /warehouses/{id}:
+    get:
+      tags:
+        - 🏭 Bodegas
+      summary: 🔍 Obtener bodega por ID
+      description: |
+        🔎 **Busca una bodega específica utilizando su identificador único.**
+        
+        Este endpoint permite obtener los detalles completos de una bodega
+        utilizando su ID. Es útil para mostrar información detallada,
+        verificar disponibilidad o planificar rutas.
+        
+        ## 🎯 Casos de Uso
+        - Visualización de detalles de bodega
+        - Verificación de ubicación para envíos
+        - Pre-carga de datos para edición
+        - Consulta para sistemas de ruteo
+        
+        ## ⚠️ Notas
+        - El ID debe ser un número entero válido
+        - Si la bodega no existe, retorna error 404
+      operationId: getWarehouseById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 🆔 Identificador único de la bodega
+          schema:
+            type: integer
+            minimum: 1
+          example: 789
+      responses:
+        '200':
+          description: ✅ Bodega encontrada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warehouse'
+              examples:
+                bodega_encontrada:
+                  summary: 🔍 Bodega encontrada
+                  value:
+                    id: 789
+                    name: "Micro Centro Bogotá Norte"
+                    location: "Calle 170 # 58-75, Bogotá"
+                    country: "Colombia"
+        '404':
+          description: ❌ Bodega no encontrada
+          $ref: '#/components/responses/NotFound'
+        '400':
+          description: ❌ ID inválido
+          $ref: '#/components/responses/BadRequest'
+
+    put:
+      tags:
+        - 🏭 Bodegas
+      summary: ✏️ Actualizar bodega existente
+      description: |
+        🔄 **Actualiza la información de una bodega existente.**
+        
+        Este endpoint permite modificar los datos de una bodega registrada.
+        Es útil para mantener actualizada la información de contacto,
+        direcciones o cambios administrativos.
+        
+        ## 📝 Campos Actualizables
+        - **name**: Nuevo nombre de la bodega (debe ser único)
+        - **location**: Nueva dirección física
+        - **country**: Nuevo país si hay reubicación
+        
+        ## ⚠️ Consideraciones Importantes
+        - El nombre no puede coincidir con otra bodega existente
+        - Los cambios de ubicación afectan rutas activas
+        - Se recomienda notificar cambios a equipos operativos
+        
+        ## 🎯 Casos de Uso
+        - Actualización de direcciones por cambios viales
+        - Cambio de razón social o nombre comercial
+        - Reubicación de instalaciones
+        - Mejora de información de contacto
+      operationId: updateWarehouse
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 🆔 Identificador único de la bodega a actualizar
+          schema:
+            type: integer
+            minimum: 1
+          example: 789
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWarehouseRequest'
+            examples:
+              actualizacion_direccion:
+                summary: 📍 Actualización de dirección
+                value:
+                  location: "Calle 170 # 58-75, Bogotá (Nueva entrada principal)"
+              actualizacion_completa:
+                summary: 🔄 Actualización completa
+                value:
+                  name: "Centro Logístico Bogotá Norte"
+                  location: "Calle 170 # 58-75, Bogotá, Zona Industrial"
+                  country: "Colombia"
+      responses:
+        '200':
+          description: ✅ Bodega actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warehouse'
+              examples:
+                bodega_actualizada:
+                  summary: 🎉 Bodega actualizada con éxito
+                  value:
+                    id: 789
+                    name: "Centro Logístico Bogotá Norte"
+                    location: "Calle 170 # 58-75, Bogotá, Zona Industrial"
+                    country: "Colombia"
+        '400':
+          description: ❌ Datos inválidos o nombre duplicado
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: ❌ Bodega no encontrada
+          $ref: '#/components/responses/NotFound'
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - 🏭 Bodegas
+      summary: 🗑️ Eliminar bodega
+      description: |
+        🚫 **Elimina permanentemente una bodega del sistema.**
+        
+        ⚠️ **ADVERTENCIA:** Esta acción es irreversible y eliminará:
+        - La bodega del sistema
+        - Referencias en envíos existentes
+        - Histórico de operaciones asociadas
+        
+        ## 🔒 Consideraciones de Seguridad
+        - Verificar que no haya envíos activos o pendientes
+        - Considerar marcar como inactiva en lugar de eliminar
+        - Realizar backup de datos históricos
+        
+        ## 🎯 Casos de Uso
+        - Cierre de instalaciones
+        - Reestructuración de red logística
+        - Eliminación de bodegas de prueba
+        
+        ## ⚠️ Recomendaciones
+        - Implementar confirmación doble en UI
+        - Registrar auditoría de eliminación
+        - Notificar a equipos operativos y clientes
+      operationId: deleteWarehouse
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 🆔 Identificador único de la bodega a eliminar
+          schema:
+            type: integer
+            minimum: 1
+          example: 789
+      responses:
+        '200':
+          description: ✅ Bodega eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Bodega eliminada exitosamente"
+              examples:
+                eliminacion_exitosa:
+                  summary: 🗑️ Bodega eliminada
+                  value:
+                    message: "Bodega eliminada exitosamente"
+        '404':
+          description: ❌ Bodega no encontrada
+          $ref: '#/components/responses/NotFound'
+        '400':
+          description: ❌ Bodega con envíos activos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                error_envios_activos:
+                  summary: ⚠️ No se puede eliminar
+                  value:
+                    message: "No se puede eliminar la bodega. Tiene envíos activos asociados."
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+/ports:
+    get:
+      tags:
+        - ⚓ Puertos
+      summary: 📋 Obtener todos los puertos
+      description: |
+        🔍 **Recupera la lista completa de puertos marítimos disponibles.**
+        
+        Este endpoint devuelve todos los puertos registrados con su información básica
+        incluyendo nombre, ciudad y país. Es esencial para la planificación de envíos
+        marítimos y la gestión de la cadena de suministro internacional.
+        
+        ## 📊 Respuesta Típica
+        ```json
+        [
+          {
+            "id": 1,
+            "name": "Puerto de Cartagena",
+            "city": "Cartagena",
+            "country": "Colombia"
+          }
+        ]
+        ```
+        
+        ## 🎯 Casos de Uso
+        - Selección de puertos para envíos marítimos
+        - Planificación de rutas de transporte internacional
+        - Gestión de aduanas y documentación
+        - Cálculo de tiempos de tránsito
+      operationId: getAllPorts
+      responses:
+        '200':
+          description: ✅ Lista de puertos obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Port'
+              examples:
+                lista_puertos:
+                  summary: ⚓ Ejemplo de lista de puertos
+                  value:
+                    - id: 1
+                      name: "Puerto de Cartagena"
+                      city: "Cartagena"
+                      country: "Colombia"
+                    - id: 2
+                      name: "Puerto de Buenaventura"
+                      city: "Buenaventura"
+                      country: "Colombia"
+                    - id: 3
+                      name: "Port of Miami"
+                      city: "Miami"
+                      country: "Estados Unidos"
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - ⚓ Puertos
+      summary: ➕ Crear nuevo puerto
+      description: |
+        🆕 **Registra un nuevo puerto marítimo en el sistema.**
+        
+        Este endpoint permite agregar nuevos puertos a la red logística marítima.
+        Cada puerto podrá ser utilizado como origen o destino en envíos marítimos.
+        
+        ## 📝 Campos Requeridos
+        - **name**: Nombre del puerto (único en el sistema)
+        - **city**: Ciudad donde se ubica el puerto
+        - **country**: País donde se ubica el puerto
+        
+        ## 🎯 Características Adicionales
+        - Los puertos son nodos clave en el comercio internacional
+        - Se pueden asignar capacidades y especializaciones
+        - Integración con sistemas de tracking marítimo
+        
+        ## ⚠️ Consideraciones
+        - Verificar códigos internacionales del puerto
+        - Validar capacidad de recepción de mercancías
+        - Considerar restricciones y regulaciones locales
+        
+        ## 📋 Ejemplos de Uso
+        - Expansión de rutas marítimas
+        - Incorporación de nuevos socios comerciales
+        - Apertura de corredores logísticos internacionales
+      operationId: createPort
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePortRequest'
+            examples:
+              puerto_nacional:
+                summary: 🇨🇴 Puerto nacional
+                value:
+                  name: "Terminal Marítimo Santa Marta"
+                  city: "Santa Marta"
+                  country: "Colombia"
+              puerto_internacional:
+                summary: 🌍 Puerto internacional
+                value:
+                  name: "Port of Houston"
+                  city: "Houston"
+                  country: "Estados Unidos"
+      responses:
+        '201':
+          description: ✅ Puerto creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Port'
+              examples:
+                puerto_creado:
+                  summary: 🎉 Puerto creado con éxito
+                  value:
+                    id: 101
+                    name: "Terminal Marítimo Santa Marta"
+                    city: "Santa Marta"
+                    country: "Colombia"
+        '400':
+          description: ❌ Datos inválidos o nombre duplicado
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+  /ports/{id}:
+    get:
+      tags:
+        - ⚓ Puertos
+      summary: 🔍 Obtener puerto por ID
+      description: |
+        🔎 **Busca un puerto específico utilizando su identificador único.**
+        
+        Este endpoint permite obtener los detalles completos de un puerto
+        utilizando su ID. Es útil para mostrar información detallada,
+        verificar disponibilidad o planificar rutas marítimas.
+        
+        ## 🎯 Casos de Uso
+        - Visualización de detalles del puerto
+        - Verificación de ubicación para envíos
+        - Pre-carga de datos para edición
+        - Consulta para sistemas de ruteo marítimo
+        
+        ## ⚠️ Notas
+        - El ID debe ser un número entero válido
+        - Si el puerto no existe, retorna error 404
+      operationId: getPortById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 🆔 Identificador único del puerto
+          schema:
+            type: integer
+            minimum: 1
+          example: 101
+      responses:
+        '200':
+          description: ✅ Puerto encontrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Port'
+              examples:
+                puerto_encontrado:
+                  summary: 🔍 Puerto encontrado
+                  value:
+                    id: 101
+                    name: "Terminal Marítimo Santa Marta"
+                    city: "Santa Marta"
+                    country: "Colombia"
+        '404':
+          description: ❌ Puerto no encontrado
+          $ref: '#/components/responses/NotFound'
+        '400':
+          description: ❌ ID inválido
+          $ref: '#/components/responses/BadRequest'
+
+    put:
+      tags:
+        - ⚓ Puertos
+      summary: ✏️ Actualizar puerto existente
+      description: |
+        🔄 **Actualiza la información de un puerto existente.**
+        
+        Este endpoint permite modificar los datos de un puerto registrado.
+        Es útil para mantener actualizada la información de contacto,
+        cambios administrativos o actualizaciones de capacidad.
+        
+        ## 📝 Campos Actualizables
+        - **name**: Nuevo nombre del puerto (debe ser único)
+        - **city**: Nueva ciudad si hay reubicación
+        - **country**: Nuevo país si hay reubicación
+        
+        ## ⚠️ Consideraciones Importantes
+        - El nombre no puede coincidir con otro puerto existente
+        - Los cambios de ubicación afectan rutas marítimas activas
+        - Se recomienda notificar cambios a navieras y clientes
+        
+        ## 🎯 Casos de Uso
+        - Actualización de nombres comerciales
+        - Cambios administrativos o de gestión
+        - Reubicación de terminales
+        - Mejora de información de contacto
+      operationId: updatePort
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 🆔 Identificador único del puerto a actualizar
+          schema:
+            type: integer
+            minimum: 1
+          example: 101
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePortRequest'
+            examples:
+              actualizacion_nombre:
+                summary: 📝 Actualización de nombre
+                value:
+                  name: "Terminal Marítimo Santa Marta (COL3)"
+              actualizacion_completa:
+                summary: 🔄 Actualización completa
+                value:
+                  name: "Contecon Santa Marta"
+                  city: "Santa Marta"
+                  country: "Colombia"
+      responses:
+        '200':
+          description: ✅ Puerto actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Port'
+              examples:
+                puerto_actualizado:
+                  summary: 🎉 Puerto actualizado con éxito
+                  value:
+                    id: 101
+                    name: "Contecon Santa Marta"
+                    city: "Santa Marta"
+                    country: "Colombia"
+        '400':
+          description: ❌ Datos inválidos o nombre duplicado
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: ❌ Puerto no encontrado
+          $ref: '#/components/responses/NotFound'
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - ⚓ Puertos
+      summary: 🗑️ Eliminar puerto
+      description: |
+        🚫 **Elimina permanentemente un puerto del sistema.**
+        
+        ⚠️ **ADVERTENCIA:** Esta acción es irreversible y eliminará:
+        - El puerto del sistema
+        - Referencias en envíos marítimos existentes
+        - Histórico de operaciones asociadas
+        
+        ## 🔒 Consideraciones de Seguridad
+        - Verificar que no haya envíos marítimos activos
+        - Considerar marcar como inactivo en lugar de eliminar
+        - Realizar backup de datos históricos
+        
+        ## 🎯 Casos de Uso
+        - Cierre de terminales
+        - Reestructuración de red marítima
+        - Eliminación de puertos de prueba
+        
+        ## ⚠️ Recomendaciones
+        - Implementar confirmación doble en UI
+        - Registrar auditoría de eliminación
+        - Notificar a navieras y clientes afectados
+      operationId: deletePort
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 🆔 Identificador único del puerto a eliminar
+          schema:
+            type: integer
+            minimum: 1
+          example: 101
+      responses:
+        '200':
+          description: ✅ Puerto eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Puerto eliminado exitosamente"
+              examples:
+                eliminacion_exitosa:
+                  summary: 🗑️ Puerto eliminado
+                  value:
+                    message: "Puerto eliminado exitosamente"
+        '404':
+          description: ❌ Puerto no encontrado
+          $ref: '#/components/responses/NotFound'
+        '400':
+          description: ❌ Puerto con envíos activos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                error_envios_activos:
+                  summary: ⚠️ No se puede eliminar
+                  value:
+                    message: "No se puede eliminar el puerto. Tiene envíos marítimos activos asociados."
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+/shipments:
+    get:
+      tags:
+        - 🚚 Envíos
+      summary: 📋 Obtener todos los envíos
+      description: |
+        🔍 **Recupera la lista completa de envíos registrados en el sistema.**
+        
+        Este endpoint devuelve todos los envíos con su información detallada incluyendo
+        tipo (terrestre/marítimo), cliente, producto, cantidades, costos y fechas.
+        Es fundamental para el seguimiento y gestión logística.
+        
+        ## 📊 Respuesta Típica
+        ```json
+        [
+          {
+            "id": 1,
+            "tracking_number": "TRK2024001",
+            "shipment_type": "LAND",
+            "quantity": 10,
+            "price": 150.00,
+            "discount": 5.00,
+            "total_price": 1495.00,
+            "register_date": "2024-01-15T10:30:00Z",
+            "delivery_date": "2024-01-20T00:00:00Z",
+            "client": "Juan Pérez",
+            "product": "Laptop Dell XPS 15",
+            "vehicle_plate": "ABC123",
+            "warehouse": "Bodega Central Bogotá"
+          }
+        ]
+        ```
+        
+        ## 🎯 Casos de Uso
+        - Panel de control de envíos activos
+        - Seguimiento de paquetes por clientes
+        - Reportes de rendimiento logístico
+        - Análisis de costos de transporte
+      operationId: getAllShipments
+      responses:
+        '200':
+          description: ✅ Lista de envíos obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Shipment'
+              examples:
+                lista_envios:
+                  summary: 🚚 Ejemplo de lista de envíos
+                  value:
+                    - id: 1
+                      tracking_number: "TRK2024001"
+                      shipment_type: "LAND"
+                      quantity: 10
+                      price: 150.00
+                      discount: 5.00
+                      total_price: 1495.00
+                      register_date: "2024-01-15T10:30:00Z"
+                      delivery_date: "2024-01-20T00:00:00Z"
+                      client: "María González"
+                      product: "Laptop Dell XPS 15"
+                      vehicle_plate: "ABC123"
+                      warehouse: "Bodega Central Bogotá"
+                    - id: 2
+                      tracking_number: "TRK2024002"
+                      shipment_type: "SEA"
+                      quantity: 50
+                      price: 25.00
+                      discount: 10.00
+                      total_price: 1240.00
+                      register_date: "2024-01-16T14:20:00Z"
+                      delivery_date: "2024-02-15T00:00:00Z"
+                      client: "Carlos Rodríguez"
+                      product: "Monitor LG 27UL850"
+                      fleet_number: "SHIP1234A"
+                      port: "Puerto de Cartagena"
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+  /shipments/land:
+    post:
+      tags:
+        - 🚚 Envíos
+      summary: 🚛 Crear envío terrestre
+      description: |
+        🆕 **Registra un nuevo envío terrestre en el sistema.**
+        
+        Este endpoint permite crear envíos terrestres asociados a clientes,
+        productos y bodegas. Incluye cálculo automático de costos y
+        generación de número de tracking único.
+        
+        ## 📝 Campos Requeridos
+        - **client_id**: ID del cliente (debe existir)
+        - **product_id**: ID del producto (debe existir)
+        - **quantity**: Cantidad de unidades (mínimo 1)
+        - **price**: Precio unitario
+        - **warehouse_id**: ID de la bodega de origen
+        - **vehicle_plate**: Placa del vehículo
+        - **delivery_date**: Fecha estimada de entrega
+        
+        ## 🎯 Características Adicionales
+        - Generación automática de número de tracking
+        - Cálculo automático de descuentos y totales
+        - Asignación de tipo de envío: LAND
+        - Registro de fecha y hora de creación
+        
+        ## 💰 Cálculo de Costos
+        - **Total sin descuento**: quantity × price
+        - **Descuento automático**: Aplica según reglas de negocio
+        - **Total final**: Total con descuentos aplicados
+        
+        ## ⚠️ Consideraciones
+        - Validar existencia de cliente, producto y bodega
+        - Verificar formato de placa vehicular
+        - La fecha de entrega debe ser futura
+        
+        ## 📋 Ejemplos de Uso
+        - Envíos de productos a clientes locales
+        - Distribución desde centros de distribución
+        - Entregas urgentes dentro del país
+      operationId: createLandShipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLandShipmentRequest'
+            examples:
+              envio_estandar:
+                summary: 🚛 Envío terrestre estándar
+                value:
+                  client_id: 1
+                  product_id: 1
+                  quantity: 5
+                  price: 150.00
+                  warehouse_id: 1
+                  vehicle_plate: "ABC123"
+                  delivery_date: "2024-02-01"
+              envio_volumen:
+                summary: 📦 Envío de gran volumen
+                value:
+                  client_id: 2
+                  product_id: 2
+                  quantity: 100
+                  price: 25.00
+                  warehouse_id: 2
+                  vehicle_plate: "XYZ789"
+                  delivery_date: "2024-02-15"
+      responses:
+        '201':
+          description: ✅ Envío terrestre creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+              examples:
+                envio_creado:
+                  summary: 🎉 Envío terrestre creado
+                  value:
+                    id: 1001
+                    tracking_number: "TRK2024001001"
+                    shipment_type: "LAND"
+                    quantity: 5
+                    price: 150.00
+                    discount: 5.00
+                    total_price: 745.00
+                    register_date: "2024-01-20T10:30:00Z"
+                    delivery_date: "2024-02-01T00:00:00Z"
+                    client: "María González"
+                    product: "Laptop Dell XPS 15"
+                    vehicle_plate: "ABC123"
+                    warehouse: "Bodega Central Bogotá"
+        '400':
+          description: ❌ Datos inválidos o entidades no encontradas
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+  /shipments/sea:
+    post:
+      tags:
+        - 🚚 Envíos
+      summary: 🚢 Crear envío marítimo
+      description: |
+        🆕 **Registra un nuevo envío marítimo en el sistema.**
+        
+        Este endpoint permite crear envíos marítimos asociados a clientes,
+        productos y puertos. Incluye cálculo automático de costos y
+        generación de número de tracking único.
+        
+        ## 📝 Campos Requeridos
+        - **client_id**: ID del cliente (debe existir)
+        - **product_id**: ID del producto (debe existir)
+        - **quantity**: Cantidad de unidades (mínimo 1)
+        - **price**: Precio unitario
+        - **port_id**: ID del puerto de destino
+        - **fleet_number**: Número de flota/barco
+        - **delivery_date**: Fecha estimada de entrega
+        
+        ## 🎯 Características Adicionales
+        - Generación automática de número de tracking
+        - Cálculo automático de descuentos y totales
+        - Asignación de tipo de envío: SEA
+        - Registro de fecha y hora de creación
+        
+        ## 💰 Cálculo de Costos
+        - **Total sin descuento**: quantity × price
+        - **Descuento automático**: Aplica según reglas de negocio
+        - **Total final**: Total con descuentos aplicados
+        
+        ## ⚠️ Consideraciones
+        - Validar existencia de cliente, producto y puerto
+        - Verificar formato de número de flota
+        - La fecha de entrega debe considerar tiempos de tránsito marítimo
+        
+        ## 📋 Ejemplos de Uso
+        - Exportaciones internacionales
+        - Importaciones desde proveedores extranjeros
+        - Envíos de gran volumen a nivel internacional
+      operationId: createSeaShipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSeaShipmentRequest'
+            examples:
+              envio_exportacion:
+                summary: 🚢 Envío de exportación
+                value:
+                  client_id: 1
+                  product_id: 1
+                  quantity: 200
+                  price: 150.00
+                  port_id: 1
+                  fleet_number: "CONTAINER2024A"
+                  delivery_date: "2024-03-15"
+              envio_importacion:
+                summary: 📦 Envío de importación
+                value:
+                  client_id: 3
+                  product_id: 3
+                  quantity: 500
+                  price: 50.00
+                  port_id: 2
+                  fleet_number: "CARGO789B"
+                  delivery_date: "2024-04-01"
+      responses:
+        '201':
+          description: ✅ Envío marítimo creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+              examples:
+                envio_creado:
+                  summary: 🎉 Envío marítimo creado
+                  value:
+                    id: 1002
+                    tracking_number: "TRK2024001002"
+                    shipment_type: "SEA"
+                    quantity: 200
+                    price: 150.00
+                    discount: 15.00
+                    total_price: 29850.00
+                    register_date: "2024-01-20T14:45:00Z"
+                    delivery_date: "2024-03-15T00:00:00Z"
+                    client: "María González"
+                    product: "Laptop Dell XPS 15"
+                    fleet_number: "CONTAINER2024A"
+                    port: "Puerto de Cartagena"
+        '400':
+          description: ❌ Datos inválidos o entidades no encontradas
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          description: ❌ Error interno del servidor
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    Client:
+      type: object
+      description: 👤 Representa un cliente en el sistema logístico
+      properties:
+        id:
+          type: integer
+          description: 🆔 Identificador único del cliente
+          example: 123
+          readOnly: true
+        name:
+          type: string
+          description: 👤 Nombre completo del cliente
+          minLength: 3
+          maxLength: 100
+          example: "María González Pérez"
+        email:
+          type: string
+          format: email
+          description: 📧 Correo electrónico del cliente
+          example: "maria@empresa.com"
+        phone:
+          type: string
+          description: 📱 Número telefónico del cliente
+          pattern: '^\+?[1-9]\d{1,14}$'
+          example: "+57 300 123 4567"
+      required:
+        - id
+        - name
+        - email
+      xml:
+        name: client
+
+    CreateClientRequest:
+      type: object
+      description: 📝 Solicitud para crear un nuevo cliente
+      properties:
+        name:
+          type: string
+          description: 👤 Nombre completo del cliente
+          minLength: 3
+          maxLength: 100
+          example: "Juan Carlos Rodríguez"
+        email:
+          type: string
+          format: email
+          description: 📧 Correo electrónico único del cliente
+          example: "juan.carlos@nuevacompañia.com"
+        phone:
+          type: string
+          description: 📱 Número telefónico (opcional pero recomendado)
+          pattern: '^\+?[1-9]\d{1,14}$'
+          example: "+57 315 777 8888"
+      required:
+        - name
+        - email
+
+    UpdateClientRequest:
+      type: object
+      description: ✏️ Solicitud para actualizar un cliente existente
+      properties:
+        name:
+          type: string
+          description: 👤 Nuevo nombre del cliente
+          minLength: 3
+          maxLength: 100
+          example: "Juan Carlos Rodríguez S.A."
+        email:
+          type: string
+          format: email
+          description: 📧 Nuevo correo electrónico (debe ser único)
+          example: "contacto@jcrodriguez.com"
+        phone:
+          type: string
+          description: 📱 Nuevo número telefónico
+          pattern: '^\+?[1-9]\d{1,14}$'
+          example: "+57 1 234 5678 ext 101"
+
+    Product:
+      type: object
+      description: 📦 Representa un producto en el catálogo del sistema
+      properties:
+        id:
+          type: integer
+          description: 🆔 Identificador único del producto
+          example: 456
+          readOnly: true
+        name:
+          type: string
+          description: 📝 Nombre del producto
+          minLength: 3
+          maxLength: 200
+          example: "Laptop Dell XPS 15"
+        description:
+          type: string
+          description: 📄 Descripción detallada del producto
+          maxLength: 1000
+          example: "Laptop de alto rendimiento con procesador Intel i7, 16GB RAM, 512GB SSD"
+      required:
+        - id
+        - name
+        - description
+      xml:
+        name: product
+
+    CreateProductRequest:
+      type: object
+      description: 📝 Solicitud para crear un nuevo producto
+      properties:
+        name:
+          type: string
+          description: 📝 Nombre único del producto
+          minLength: 3
+          maxLength: 200
+          example: "Smartphone Samsung Galaxy S24"
+        description:
+          type: string
+          description: 📄 Descripción detallada del producto
+          maxLength: 1000
+          example: "Teléfono flagship con cámara de 50MP, 256GB almacenamiento, 5G"
+      required:
+        - name
+        - description
+
+    UpdateProductRequest:
+      type: object
+      description: ✏️ Solicitud para actualizar un producto existente
+      properties:
+        name:
+          type: string
+          description: 📝 Nuevo nombre del producto (debe ser único)
+          minLength: 3
+          maxLength: 200
+          example: "Samsung Galaxy S24 Ultra"
+        description:
+          type: string
+          description: 📄 Nueva descripción del producto
+          maxLength: 1000
+          example: "Teléfono premium con cámara de 200MP, S-Pen incluida, 512GB almacenamiento, 5G"
+
+    Warehouse:
+      type: object
+      description: 🏭 Representa una bodega en el sistema logístico
+      properties:
+        id:
+          type: integer
+          description: 🆔 Identificador único de la bodega
+          example: 789
+          readOnly: true
+        name:
+          type: string
+          description: 📝 Nombre de la bodega
+          minLength: 3
+          maxLength: 200
+          example: "Bodega Central Bogotá"
+        location:
+          type: string
+          description: 📍 Dirección física completa de la bodega
+          maxLength: 500
+          example: "Calle 100 # 50-90, Bogotá"
+        country:
+          type: string
+          description: 🌍 País donde se ubica la bodega
+          minLength: 2
+          maxLength: 100
+          example: "Colombia"
+      required:
+        - id
+        - name
+        - location
+        - country
+      xml:
+        name: warehouse
+
+    CreateWarehouseRequest:
+      type: object
+      description: 📝 Solicitud para crear una nueva bodega
+      properties:
+        name:
+          type: string
+          description: 📝 Nombre único de la bodega
+          minLength: 3
+          maxLength: 200
+          example: "Micro Centro Bogotá Norte"
+        location:
+          type: string
+          description: 📍 Dirección física completa
+          maxLength: 500
+          example: "Calle 170 # 58-75, Bogotá"
+        country:
+          type: string
+          description: 🌍 País de ubicación
+          minLength: 2
+          maxLength: 100
+          example: "Colombia"
+      required:
+        - name
+        - location
+        - country
+
+    UpdateWarehouseRequest:
+      type: object
+      description: ✏️ Solicitud para actualizar una bodega existente
+      properties:
+        name:
+          type: string
+          description: 📝 Nuevo nombre de la bodega (debe ser único)
+          minLength: 3
+          maxLength: 200
+          example: "Centro Logístico Bogotá Norte"
+        location:
+          type: string
+          description: 📍 Nueva dirección física
+          maxLength: 500
+          example: "Calle 170 # 58-75, Bogotá, Zona Industrial"
+        country:
+          type: string
+          description: 🌍 Nuevo país si hay reubicación
+          minLength: 2
+          maxLength: 100
+          example: "Colombia"
+
+    Port:
+      type: object
+      description: ⚓ Representa un puerto marítimo en el sistema logístico
+      properties:
+        id:
+          type: integer
+          description: 🆔 Identificador único del puerto
+          example: 101
+          readOnly: true
+        name:
+          type: string
+          description: 📝 Nombre del puerto
+          minLength: 3
+          maxLength: 200
+          example: "Puerto de Cartagena"
+        city:
+          type: string
+          description: 🏙️ Ciudad donde se ubica el puerto
+          minLength: 2
+          maxLength: 100
+          example: "Cartagena"
+        country:
+          type: string
+          description: 🌍 País donde se ubica el puerto
+          minLength: 2
+          maxLength: 100
+          example: "Colombia"
+      required:
+        - id
+        - name
+        - city
+        - country
+      xml:
+        name: port
+
+    CreatePortRequest:
+      type: object
+      description: 📝 Solicitud para crear un nuevo puerto
+      properties:
+        name:
+          type: string
+          description: 📝 Nombre único del puerto
+          minLength: 3
+          maxLength: 200
+          example: "Terminal Marítimo Santa Marta"
+        city:
+          type: string
+          description: 🏙️ Ciudad de ubicación
+          minLength: 2
+          maxLength: 100
+          example: "Santa Marta"
+        country:
+          type: string
+          description: 🌍 País de ubicación
+          minLength: 2
+          maxLength: 100
+          example: "Colombia"
+      required:
+        - name
+        - city
+        - country
+
+    UpdatePortRequest:
+      type: object
+      description: ✏️ Solicitud para actualizar un puerto existente
+      properties:
+        name:
+          type: string
+          description: 📝 Nuevo nombre del puerto (debe ser único)
+          minLength: 3
+          maxLength: 200
+          example: "Contecon Santa Marta"
+        city:
+          type: string
+          description: 🏙️ Nueva ciudad si hay reubicación
+          minLength: 2
+          maxLength: 100
+          example: "Santa Marta"
+        country:
+          type: string
+          description: 🌍 Nuevo país si hay reubicación
+          minLength: 2
+          maxLength: 100
+          example: "Colombia"
+
+    Shipment:
+      type: object
+      description: 🚚 Representa un envío en el sistema logístico
+      properties:
+        id:
+          type: integer
+          description: 🆔 Identificador único del envío
+          example: 1001
+          readOnly: true
+        tracking_number:
+          type: string
+          description: 📦 Número único de seguimiento
+          example: "TRK2024001001"
+          readOnly: true
+        shipment_type:
+          type: string
+          enum: ["LAND", "SEA"]
+          description: 🚛🚢 Tipo de envío (Terrestre/Marítimo)
+          example: "LAND"
+          readOnly: true
+        quantity:
+          type: integer
+          description: 📊 Cantidad de unidades enviadas
+          minimum: 1
+          example: 5
+        price:
+          type: number
+          format: decimal
+          description: 💰 Precio unitario del producto
+          minimum: 0
+          example: 150.00
+        discount:
+          type: number
+          format: decimal
+          description: 🎁 Descuento aplicado automáticamente
+          minimum: 0
+          example: 5.00
+          readOnly: true
+        total_price:
+          type: number
+          format: decimal
+          description: 💵 Precio total con descuentos
+          minimum: 0
+          example: 745.00
+          readOnly: true
+        register_date:
+          type: string
+          format: date-time
+          description: 📅 Fecha y hora de registro del envío
+          example: "2024-01-20T10:30:00Z"
+          readOnly: true
+        delivery_date:
+          type: string
+          format: date
+          description: 📆 Fecha estimada de entrega
+          example: "2024-02-01"
+        client:
+          type: string
+          description: 👤 Nombre del cliente destinatario
+          example: "María González"
+          readOnly: true
+        product:
+          type: string
+          description: 📦 Nombre del producto enviado
+          example: "Laptop Dell XPS 15"
+          readOnly: true
+        vehicle_plate:
+          type: string
+          description: 🚗 Placa del vehículo (solo envíos terrestres)
+          example: "ABC123"
+          readOnly: true
+        warehouse:
+          type: string
+          description: 🏭 Nombre de la bodega (solo envíos terrestres)
+          example: "Bodega Central Bogotá"
+          readOnly: true
+        fleet_number:
+          type: string
+          description: 🚢 Número de flota/barco (solo envíos marítimos)
+          example: "CONTAINER2024A"
+          readOnly: true
+        port:
+          type: string
+          description: ⚓ Nombre del puerto (solo envíos marítimos)
+          example: "Puerto de Cartagena"
+          readOnly: true
+      required:
+        - id
+        - tracking_number
+        - shipment_type
+        - quantity
+        - price
+        - discount
+        - total_price
+        - register_date
+        - delivery_date
+        - client
+        - product
+      xml:
+        name: shipment
+
+    CreateLandShipmentRequest:
+      type: object
+      description: 🚛 Solicitud para crear un envío terrestre
+      properties:
+        client_id:
+          type: integer
+          description: 👤 ID del cliente existente
+          minimum: 1
+          example: 1
+        product_id:
+          type: integer
+          description: 📦 ID del producto existente
+          minimum: 1
+          example: 1
+        quantity:
+          type: integer
+          description: 📊 Cantidad de unidades a enviar
+          minimum: 1
+          example: 5
+        price:
+          type: number
+          format: decimal
+          description: 💰 Precio unitario
+          minimum: 0
+          example: 150.00
+        warehouse_id:
+          type: integer
+          description: 🏭 ID de la bodega de origen
+          minimum: 1
+          example: 1
+        vehicle_plate:
+          type: string
+          description: 🚗 Placa del vehículo de transporte
+          minLength: 3
+          maxLength: 10
+          example: "ABC123"
+        delivery_date:
+          type: string
+          format: date
+          description: 📆 Fecha estimada de entrega
+          example: "2024-02-01"
+      required:
+        - client_id
+        - product_id
+        - quantity
+        - price
+        - warehouse_id
+        - vehicle_plate
+        - delivery_date
+
+    CreateSeaShipmentRequest:
+      type: object
+      description: 🚢 Solicitud para crear un envío marítimo
+      properties:
+        client_id:
+          type: integer
+          description: 👤 ID del cliente existente
+          minimum: 1
+          example: 1
+        product_id:
+          type: integer
+          description: 📦 ID del producto existente
+          minimum: 1
+          example: 1
+        quantity:
+          type: integer
+          description: 📊 Cantidad de unidades a enviar
+          minimum: 1
+          example: 200
+        price:
+          type: number
+          format: decimal
+          description: 💰 Precio unitario
+          minimum: 0
+          example: 150.00
+        port_id:
+          type: integer
+          description: ⚓ ID del puerto de destino
+          minimum: 1
+          example: 1
+        fleet_number:
+          type: string
+          description: 🚢 Número de flota/barco
+          minLength: 3
+          maxLength: 20
+          example: "CONTAINER2024A"
+        delivery_date:
+          type: string
+          format: date
+          description: 📆 Fecha estimada de entrega
+          example: "2024-03-15"
+      required:
+        - client_id
+        - product_id
+        - quantity
+        - price
+        - port_id
+        - fleet_number
+        - delivery_date
+
+    Error:
+      type: object
+      description: ❌ Respuesta de error estándar
+      properties:
+        message:
+          type: string
+          description: 📝 Mensaje descriptivo del error
+          example: "El email ya está registrado en el sistema"
+        error_code:
+          type: string
+          description: 🔢 Código interno del error
+          example: "EMAIL_ALREADY_EXISTS"
+        details:
+          type: object
+          description: 📋 Detalles adicionales del error
+          properties:
+            field:
+              type: string
+              example: "email"
+            value:
+              type: string
+              example: "existente@dominio.com"
+      required:
+        - message
+
+  responses:
+    BadRequest:
+      description: ❌ Solicitud inválida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            datos_invalidos:
+              summary: 📝 Datos inválidos
+              value:
+                message: "El formato del email no es válido"
+                error_code: "INVALID_EMAIL_FORMAT"
+            email_duplicado:
+              summary: 📧 Email duplicado
+              value:
+                message: "El email ya está registrado en el sistema"
+                error_code: "EMAIL_ALREADY_EXISTS"
+
+    NotFound:
+      description: 🔍 Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            cliente_no_encontrado:
+              summary: 👤 Cliente no encontrado
+              value:
+                message: "No se encontró el cliente con ID 999"
+                error_code: "CLIENT_NOT_FOUND"
+
+    InternalServerError:
+      description: 💥 Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            error_interno:
+              summary: 💥 Error del servidor
+              value:
+                message: "Error interno del servidor. Intente nuevamente más tarde."
+                error_code: "INTERNAL_SERVER_ERROR"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 🔐 Autenticación mediante token JWT (a implementar)
+
+security:
+  - BearerAuth: []
