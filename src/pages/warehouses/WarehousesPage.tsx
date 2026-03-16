@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
 import api from '../../api/axios';
+import Toast from '../../components/Toast';
+import ConfirmModal from '../../components/ConfirmModal';
 
-interface Warehouse {
-  id: number;
-  name: string;
-  location: string;
-  country: string;
-}
+interface Warehouse {id: number; name: string; location: string; country: string;}
+ 
 
 function WarehousesPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [form, setForm] = useState({ name: '', location: '', country: '' });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
 
   const fetchWarehouses = async () => {
     const res = await api.get('/warehouses');
@@ -29,8 +29,10 @@ function WarehousesPage() {
     try {
       if (editingId) {
         await api.put(`/warehouses/${editingId}`, form);
+        setToast({ message: 'Bodega actualizada correctamente', type: 'success' });
       } else {
         await api.post('/warehouses', form);
+        setToast({ message: 'Bodega creada correctamente', type: 'success' });
       }
       setForm({ name: '', location: '', country: '' });
       setEditingId(null);
@@ -45,10 +47,17 @@ function WarehousesPage() {
     setForm({ name: warehouse.name, location: warehouse.location, country: warehouse.country });
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('¿Estás seguro de eliminar esta bodega?')) return;
-    await api.delete(`/warehouses/${id}`);
-    fetchWarehouses();
+  const handleDeleteConfirm = async () => {
+    if (!confirmId) return;
+    try {
+      await api.delete(`/warehouses/${confirmId}`);
+      setToast({ message: 'Bodega eliminada correctamente', type: 'success' });
+      fetchWarehouses();
+    } catch {
+      setToast({ message: 'Error al eliminar', type: 'error' });
+    } finally {
+      setConfirmId(null);
+    }
   };
 
   const handleCancel = () => {
@@ -109,12 +118,28 @@ function WarehousesPage() {
               <td>{warehouse.country}</td>
               <td style={{ display: 'flex', gap: '0.5rem' }}>
                 <button className="btn-edit" onClick={() => handleEdit(warehouse)}>Editar</button>
-                <button className="btn-danger" onClick={() => handleDelete(warehouse.id)}>Eliminar</button>
+                <button className="btn-danger" onClick={() => setConfirmId(warehouse.id)}>Eliminar</button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {confirmId && (
+        <ConfirmModal
+          message="¿Estás seguro de eliminar esta bodega?"
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setConfirmId(null)}
+        />
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }
